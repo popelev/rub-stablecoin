@@ -6,8 +6,8 @@ import "@chainlink/contracts/src/v0.8/Denominations.sol";
 
 contract PriceFeedMock {
     FeedRegistryInterface internal registry;
-    uint UsdRubPrice;
-    uint public decimals = 8;
+    uint256 UsdRubPrice;
+    uint256 public decimals = 8;
 
     /**
      * Network: Mainnet
@@ -15,32 +15,32 @@ contract PriceFeedMock {
      */
     constructor(address _registry) public {
         registry = FeedRegistryInterface(_registry);
-        uint UsdRubPrice = 60 * 10**decimals;
+        uint256 UsdRubPrice = 60 * 10**decimals;
     }
 
     /**
      * Returns the USD / RUB price
      */
-    function getUsdRubPrice() public view returns (uint) {
+    function getUsdRubPrice() public view returns (uint256) {
         return UsdRubPrice;
     }
 
     /**
      * Returns the RUB / USD price
      */
-    function getRubUsdPrice() public view returns (uint) {
-        uint price = (1 * 10**decimals) / UsdRubPrice;
+    function getRubUsdPrice() public view returns (uint256) {
+        uint256 price = (1 * 10**decimals) / UsdRubPrice;
         return price;
     }
 
     /**
      * Returns the latest price
      */
-    function getPrice(address base, address quote) public pure returns (uint) {
+    function getPrice(address base, address quote) public pure returns (uint256) {
         return 0;
     }
 
-    function setUsdRubPrice(uint _UsdRubPrice) public {
+    function setUsdRubPrice(uint256 _UsdRubPrice) public {
         UsdRubPrice = _UsdRubPrice;
     }
 }

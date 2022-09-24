@@ -10,7 +10,7 @@ contract DaiRubTokenSwap is Ownable {
     ERC20 public immutable DAI;
     ERC20 public immutable Ruble;
     PriceFeed public immutable RublePriceFeed;
-    uint public constant FEE = 0;
+    uint256 public constant FEE = 0;
 
     constructor(
         address _DaiAddress,
@@ -22,11 +22,11 @@ contract DaiRubTokenSwap is Ownable {
         RublePriceFeed = PriceFeed(_RublePriceFeedAddress);
     }
 
-    function getUsdRubPrice() public view returns (uint) {
+    function getUsdRubPrice() public view returns (uint256) {
         return RublePriceFeed.getUsdRubPrice();
     }
 
-    function getRubUsdPrice() public view returns (uint) {
+    function getRubUsdPrice() public view returns (uint256) {
         return RublePriceFeed.getRubUsdPrice();
     }
 }

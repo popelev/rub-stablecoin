@@ -18,45 +18,45 @@ contract PriceFeed {
     /**
      * Returns the USD / RUB price
      */
-    function getUsdRubPrice() public view returns (uint) {
+    function getUsdRubPrice() public view returns (uint256) {
         (
             ,
             /*uint80 roundID*/
-            int price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
             ,
             ,
 
         ) = registry.latestRoundData(Denominations.USD, Denominations.RUB);
-        return uint(price);
+        return uint256(price);
     }
 
     /**
      * Returns the RUB / USD price
      */
-    function getRubUsdPrice() public view returns (uint) {
+    function getRubUsdPrice() public view returns (uint256) {
         (
             ,
             /*uint80 roundID*/
-            int price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
             ,
             ,
 
         ) = registry.latestRoundData(Denominations.RUB, Denominations.USD);
-        return uint(price);
+        return uint256(price);
     }
 
     /**
      * Returns the latest price
      */
-    function getPrice(address base, address quote) public view returns (uint) {
+    function getPrice(address base, address quote) public view returns (uint256) {
         (
             ,
             /*uint80 roundID*/
-            int price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/
             ,
             ,
 
         ) = registry.latestRoundData(base, quote);
-        return uint(price);
+        return uint256(price);
     }
 }

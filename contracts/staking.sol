@@ -26,9 +26,7 @@ contract TokenFarm is Ownable {
         require(_amount > 0, "amount cannot be 0");
         updateUniqueTokensStaked(msg.sender, token);
         ERC20(token).transferFrom(msg.sender, address(this), _amount);
-        stakingBalance[token][msg.sender] =
-            stakingBalance[token][msg.sender] +
-            _amount;
+        stakingBalance[token][msg.sender] = stakingBalance[token][msg.sender] + _amount;
         if (uniqueTokensStaked[msg.sender] == 1) {
             stakers.push(msg.sender);
         }
