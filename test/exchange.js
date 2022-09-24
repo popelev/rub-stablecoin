@@ -51,16 +51,19 @@ describe("Exchange", function () {
       await exchange.addLiquidity(parseEther(200), { value: parseEther(100) });
 
       expect(await getBalance(exchange.address)).to.deep.equal(parseEther(100));
-      expect(await exchange.getReserve()).to.deep.equal(parseEther(200));
+      expect(await exchange.getTokenReserve()).to.deep.equal(parseEther(200));
     });
 
     it("allows zero amounts", async () => {
       await loadFixture(deployAll);
+
       await token.approve(exchange.address, 0);
       await exchange.addLiquidity(0, { value: 0 });
+
       let balance = await getBalance(exchange.address);
       expect(balance.toNumber()).to.equal(0);
-      let reserve = await exchange.getReserve();
+
+      let reserve = await exchange.getTokenReserve();
       expect(reserve.toNumber()).to.equal(0);
     });
   });
@@ -68,38 +71,42 @@ describe("Exchange", function () {
   describe("getTokenAmount", async () => {
     it("returns correct token amount", async () => {
       await loadFixture(deployAll);
+
       await token.approve(exchange.address, parseEther(2000));
+
       await exchange.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
 
       let tokensOut = await exchange.getTokenAmount(parseEther(1));
-      expect(formatEther(tokensOut)).to.equal("1.998001998001998001");
+      expect(formatEther(tokensOut)).to.equal("1.978041738678708079");
 
       tokensOut = await exchange.getTokenAmount(parseEther(100));
-      expect(formatEther(tokensOut)).to.equal("181.818181818181818181");
+      expect(formatEther(tokensOut)).to.equal("180.1637852593266606");
 
       tokensOut = await exchange.getTokenAmount(parseEther(1000));
-      expect(formatEther(tokensOut)).to.equal("1000.0");
+      expect(formatEther(tokensOut)).to.equal("994.974874371859296482");
     });
   });
 
   describe("getEthAmount", async () => {
     it("returns correct ether amount", async () => {
       await loadFixture(deployAll);
+
       await token.approve(exchange.address, parseEther(2000));
+
       await exchange.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
 
       let ethOut = await exchange.getEthAmount(parseEther(2));
-      expect(formatEther(ethOut)).to.deep.equal("0.999000999000999");
+      expect(formatEther(ethOut)).to.deep.equal("0.989020869339354039");
 
       ethOut = await exchange.getEthAmount(parseEther(100));
-      expect(formatEther(ethOut)).to.deep.equal("47.619047619047619047");
+      expect(formatEther(ethOut)).to.deep.equal("47.16531681753215817");
 
       ethOut = await exchange.getEthAmount(parseEther(2000));
-      expect(formatEther(ethOut)).to.deep.equal("500.0");
+      expect(formatEther(ethOut)).to.deep.equal("497.487437185929648241");
     });
   });
 
@@ -108,6 +115,7 @@ describe("Exchange", function () {
       await loadFixture(deployAll);
 
       await token.approve(exchange.address, parseEther(2000));
+
       await exchange.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
@@ -118,16 +126,16 @@ describe("Exchange", function () {
 
       await exchange
         .connect(user)
-        .ethToTokenSwap(parseEther(1.99), { value: parseEther(1) });
+        .ethToTokenSwap(parseEther(1.97), { value: parseEther(1) });
 
       const userBalanceAfter = await getBalance(user.address);
-      expect(formatEther(userBalanceAfter - userBalanceBefore)).to.deep.equal(
-        "-1.0000924032683213"
-      );
+      expect(
+        formatEther(userBalanceAfter.sub(userBalanceBefore))
+      ).to.deep.equal("-1.000093753588062724");
 
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.deep.equal(
-        "1.998001998001998001"
+        "1.978041738678708079"
       );
 
       const exchangeEthBalance = await getBalance(exchange.address);
@@ -135,7 +143,7 @@ describe("Exchange", function () {
 
       const exchangeTokenBalance = await token.balanceOf(exchange.address);
       expect(formatEther(exchangeTokenBalance)).to.deep.equal(
-        "1998.001998001998001999"
+        "1998.021958261321291921"
       );
     });
 
@@ -166,10 +174,12 @@ describe("Exchange", function () {
   describe("tokenToEthSwap", async () => {
     beforeEach(async () => {
       await loadFixture(deployAll);
-      await token.transfer(user.address, parseEther(2));
-      await token.connect(user).approve(exchange.address, parseEther(2));
 
+      await token.transfer(user.address, parseEther(2));
+
+      await token.connect(user).approve(exchange.address, parseEther(2));
       await token.approve(exchange.address, parseEther(2000));
+
       await exchange.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
@@ -183,16 +193,16 @@ describe("Exchange", function () {
         .tokenToEthSwap(parseEther(2), parseEther(0.9));
 
       const userBalanceAfter = await getBalance(user.address);
-      expect(formatEther(userBalanceAfter - userBalanceBefore)).to.deep.equal(
-        "0.9989323735380787"
-      );
+      expect(
+        formatEther(userBalanceAfter.sub(userBalanceBefore))
+      ).to.deep.equal("0.988951178130649915");
 
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.deep.equal("0.0");
 
       const exchangeEthBalance = await getBalance(exchange.address);
       expect(formatEther(exchangeEthBalance)).to.deep.equal(
-        "999.000999000999001"
+        "999.010979130660645961"
       );
 
       const exchangeTokenBalance = await token.balanceOf(exchange.address);
@@ -209,7 +219,7 @@ describe("Exchange", function () {
       await exchange.connect(user).tokenToEthSwap(parseEther(0), parseEther(0));
 
       const userBalance = await getBalance(user.address);
-      expect(formatEther(userBalance)).to.deep.equal("9999.999864293291209264");
+      expect(formatEther(userBalance)).to.deep.equal("9999.99986285069798223");
 
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.deep.equal("2.0");
@@ -219,6 +229,101 @@ describe("Exchange", function () {
 
       const exchangeTokenBalance = await token.balanceOf(exchange.address);
       expect(formatEther(exchangeTokenBalance)).to.deep.equal("2000.0");
+    });
+  });
+
+  describe("removeLiquidity", async () => {
+    beforeEach(async () => {
+      await loadFixture(deployAll);
+
+      await token.approve(exchange.address, parseEther(300));
+      await exchange.addLiquidity(parseEther(200), {
+        value: parseEther(100),
+      });
+    });
+
+    it("removes some liquidity", async () => {
+      const userEtherBalanceBefore = await getBalance(owner.address);
+      const userTokenBalanceBefore = await token.balanceOf(owner.address);
+
+      await exchange.removeLiquidity(parseEther(25));
+
+      expect(await exchange.getTokenReserve()).to.equal(parseEther(150));
+      expect(await getBalance(exchange.address)).to.equal(parseEther(75));
+
+      const userEtherBalanceAfter = await getBalance(owner.address);
+      const userTokenBalanceAfter = await token.balanceOf(owner.address);
+
+      expect(
+        formatEther(userEtherBalanceAfter.sub(userEtherBalanceBefore))
+      ).to.equal("24.999902725931060155"); // 25 - gas fees
+
+      expect(
+        formatEther(userTokenBalanceAfter.sub(userTokenBalanceBefore))
+      ).to.equal("50.0");
+    });
+
+    it("removes all liquidity", async () => {
+      const userEtherBalanceBefore = await getBalance(owner.address);
+      const userTokenBalanceBefore = await token.balanceOf(owner.address);
+
+      await exchange.removeLiquidity(parseEther(100));
+
+      expect(await exchange.getTokenReserve()).to.equal(parseEther(0));
+      expect(await getBalance(exchange.address)).to.equal(parseEther(0));
+
+      const userEtherBalanceAfter = await getBalance(owner.address);
+      const userTokenBalanceAfter = await token.balanceOf(owner.address);
+
+      expect(
+        formatEther(userEtherBalanceAfter.sub(userEtherBalanceBefore))
+      ).to.equal("99.999922180744848124"); // 100 - gas fees
+
+      expect(
+        formatEther(userTokenBalanceAfter.sub(userTokenBalanceBefore))
+      ).to.equal("200.0");
+    });
+
+    it("pays for provided liquidity", async () => {
+      const userEtherBalanceBefore = await getBalance(owner.address);
+      const userTokenBalanceBefore = await token.balanceOf(owner.address);
+
+      await exchange
+        .connect(user)
+        .ethToTokenSwap(parseEther(18), { value: parseEther(10) });
+
+      await exchange.removeLiquidity(parseEther(100));
+
+      expect(await exchange.getTokenReserve()).to.equal(parseEther(0));
+      expect(await getBalance(exchange.address)).to.equal(parseEther(0));
+      expect(formatEther(await token.balanceOf(user.address))).to.equal(
+        "18.01637852593266606"
+      );
+
+      const userEtherBalanceAfter = await getBalance(owner.address);
+      const userTokenBalanceAfter = await token.balanceOf(owner.address);
+
+      expect(
+        formatEther(userEtherBalanceAfter.sub(userEtherBalanceBefore))
+      ).to.equal("109.999925544870311096"); // 110 - gas fees
+
+      expect(
+        formatEther(userTokenBalanceAfter.sub(userTokenBalanceBefore))
+      ).to.equal("181.98362147406733394");
+    });
+
+    it("burns LP-tokens", async () => {
+      await expect(
+        exchange.removeLiquidity(parseEther(25))
+      ).to.changeTokenBalance(exchange, owner, parseEther(-25));
+
+      expect(await exchange.totalSupply()).to.equal(parseEther(75));
+    });
+
+    it("doesn't allow invalid amount", async () => {
+      await expect(
+        exchange.removeLiquidity(parseEther(100.1))
+      ).to.be.revertedWith("ERC20: burn amount exceeds balance");
     });
   });
 });

@@ -25,6 +25,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.24",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.8.2",
+    "solidity-docgen": "^0.6.0-beta.27",
     "typechain": "^8.1.0"
   }
 }
