@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-import "./exchange.sol";
+import "./exchangeV1.sol";
 
 interface IFactory {
     function getExchange(address _tokenAddress) external returns (address);
@@ -10,23 +10,23 @@ interface IFactory {
 /**
  * @title Contract for
  */
-contract Factory is IFactory {
-    mapping(address => address) public tokenToExchange;
+contract FactoryV1 is IFactory {
+    mapping(address => address) public tokenToExchangeV1;
 
     function createExchange(address _tokenAddress) public returns (address) {
         require(_tokenAddress != address(0), "invalid token address");
         require(
-            tokenToExchange[_tokenAddress] == address(0),
-            "exchange already exists"
+            tokenToExchangeV1[_tokenAddress] == address(0),
+            "exchangeV1 already exists"
         );
 
-        Exchange exchange = new Exchange(_tokenAddress);
-        tokenToExchange[_tokenAddress] = address(exchange);
+        ExchangeV1 exchangeV1 = new ExchangeV1(_tokenAddress);
+        tokenToExchangeV1[_tokenAddress] = address(exchangeV1);
 
-        return address(exchange);
+        return address(exchangeV1);
     }
 
     function getExchange(address _tokenAddress) public view returns (address) {
-        return tokenToExchange[_tokenAddress];
+        return tokenToExchangeV1[_tokenAddress];
     }
 }

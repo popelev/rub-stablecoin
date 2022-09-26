@@ -12,21 +12,21 @@ const formatEther = (value) =>
   );
 const getBalance = (value) => ethers.provider.getBalance(value.toString());
 
-const createExchange = async (factory, tokenAddress, sender) => {
-  const exchangeAddress = await factory
+const createExchangeV1 = async (factory, tokenAddress, sender) => {
+  const exchangeV1Address = await factory
     .connect(sender)
-    .callStatic.createExchange(tokenAddress);
+    .callStatic.createExchangeV1(tokenAddress);
 
-  await factory.connect(sender).createExchange(tokenAddress);
+  await factory.connect(sender).createExchangeV1(tokenAddress);
 
-  const Exchange = await ethers.getContractFactory("Exchange");
+  const ExchangeV1 = await ethers.getContractFactory("ExchangeV1");
 
-  return await Exchange.attach(exchangeAddress);
+  return await ExchangeV1.attach(exchangeV1Address);
 };
 
-describe("Exchange", function () {
+xdescribe("ExchangeV1", function () {
   let token;
-  let exchange;
+  let exchangeV1;
   let owner;
   let user;
 
@@ -44,12 +44,12 @@ describe("Exchange", function () {
       value: 0,
     });
 
-    const Exchange = await ethers.getContractFactory("Exchange");
-    exchange = await Exchange.deploy(token.address, { value: 0 });
+    const ExchangeV1 = await ethers.getContractFactory("ExchangeV1");
+    exchangeV1 = await ExchangeV1.deploy(token.address, { value: 0 });
 
     return {
       token,
-      exchange,
+      exchangeV1,
       owner,
       user,
     };
@@ -59,11 +59,11 @@ describe("Exchange", function () {
     it("is deployed", async () => {
       await loadFixture(deployAll);
 
-      expect(await exchange.deployed()).to.equal(exchange);
-      expect(await exchange.name()).to.equal("Dex-LP-V1");
-      expect(await exchange.symbol()).to.equal("DLP-V1");
-      expect(await exchange.totalSupply()).to.equal(parseEther(0));
-      expect(await exchange.factoryAddress()).to.equal(owner.address);
+      expect(await exchangeV1.deployed()).to.equal(exchangeV1);
+      expect(await exchangeV1.name()).to.equal("Dex-LP-V1");
+      expect(await exchangeV1.symbol()).to.equal("DLP-V1");
+      expect(await exchangeV1.totalSupply()).to.equal(parseEther(0));
+      expect(await exchangeV1.factoryAddress()).to.equal(owner.address);
     });
   });
 
@@ -74,31 +74,33 @@ describe("Exchange", function () {
       });
 
       it("adds liquidity", async () => {
-        await token.approve(exchange.address, parseEther(200));
-        await exchange.addLiquidity(parseEther(200), {
+        await token.approve(exchangeV1.address, parseEther(200));
+        await exchangeV1.addLiquidity(parseEther(200), {
           value: parseEther(100),
         });
 
-        expect(await getBalance(exchange.address)).to.equal(parseEther(100));
-        expect(await exchange.getTokenReserve()).to.equal(parseEther(200));
+        expect(await getBalance(exchangeV1.address)).to.equal(parseEther(100));
+        expect(await exchangeV1.getTokenReserve()).to.equal(parseEther(200));
       });
 
       it("mints LP tokens", async () => {
-        await token.approve(exchange.address, parseEther(200));
-        await exchange.addLiquidity(parseEther(200), {
+        await token.approve(exchangeV1.address, parseEther(200));
+        await exchangeV1.addLiquidity(parseEther(200), {
           value: parseEther(100),
         });
 
-        expect(await exchange.balanceOf(owner.address)).to.eq(parseEther(100));
-        expect(await exchange.totalSupply()).to.eq(parseEther(100));
+        expect(await exchangeV1.balanceOf(owner.address)).to.eq(
+          parseEther(100)
+        );
+        expect(await exchangeV1.totalSupply()).to.eq(parseEther(100));
       });
 
       it("allows zero amounts", async () => {
-        await token.approve(exchange.address, 0);
-        await exchange.addLiquidity(0, { value: 0 });
+        await token.approve(exchangeV1.address, 0);
+        await exchangeV1.addLiquidity(0, { value: 0 });
 
-        expect(await getBalance(exchange.address)).to.equal(0);
-        expect(await exchange.getTokenReserve()).to.equal(0);
+        expect(await getBalance(exchangeV1.address)).to.equal(0);
+        expect(await exchangeV1.getTokenReserve()).to.equal(0);
       });
     });
 
@@ -106,29 +108,35 @@ describe("Exchange", function () {
       beforeEach(async () => {
         await loadFixture(deployAll);
 
-        await token.approve(exchange.address, parseEther(300));
-        await exchange.addLiquidity(parseEther(200), {
+        await token.approve(exchangeV1.address, parseEther(300));
+        await exchangeV1.addLiquidity(parseEther(200), {
           value: parseEther(100),
         });
       });
 
-      it("preserves exchange rate", async () => {
-        await exchange.addLiquidity(parseEther(200), { value: parseEther(50) });
+      it("preserves exchangeV1 rate", async () => {
+        await exchangeV1.addLiquidity(parseEther(200), {
+          value: parseEther(50),
+        });
 
-        expect(await getBalance(exchange.address)).to.equal(parseEther(150));
-        expect(await exchange.getTokenReserve()).to.equal(parseEther(300));
+        expect(await getBalance(exchangeV1.address)).to.equal(parseEther(150));
+        expect(await exchangeV1.getTokenReserve()).to.equal(parseEther(300));
       });
 
       it("mints LP tokens", async () => {
-        await exchange.addLiquidity(parseEther(200), { value: parseEther(50) });
+        await exchangeV1.addLiquidity(parseEther(200), {
+          value: parseEther(50),
+        });
 
-        expect(await exchange.balanceOf(owner.address)).to.eq(parseEther(150));
-        expect(await exchange.totalSupply()).to.eq(parseEther(150));
+        expect(await exchangeV1.balanceOf(owner.address)).to.eq(
+          parseEther(150)
+        );
+        expect(await exchangeV1.totalSupply()).to.eq(parseEther(150));
       });
 
       it("fails when not enough tokens", async () => {
         await expect(
-          exchange.addLiquidity(parseEther(50), { value: parseEther(50) })
+          exchangeV1.addLiquidity(parseEther(50), { value: parseEther(50) })
         ).to.be.revertedWith("insufficient token amount");
       });
     });
@@ -138,18 +146,20 @@ describe("Exchange", function () {
     beforeEach(async () => {
       await loadFixture(deployAll);
 
-      await token.approve(exchange.address, parseEther(300));
-      await exchange.addLiquidity(parseEther(200), { value: parseEther(100) });
+      await token.approve(exchangeV1.address, parseEther(300));
+      await exchangeV1.addLiquidity(parseEther(200), {
+        value: parseEther(100),
+      });
     });
 
     it("removes some liquidity", async () => {
       const userEtherBalanceBefore = await getBalance(owner.address);
       const userTokenBalanceBefore = await token.balanceOf(owner.address);
 
-      await exchange.removeLiquidity(parseEther(25));
+      await exchangeV1.removeLiquidity(parseEther(25));
 
-      expect(await exchange.getTokenReserve()).to.equal(parseEther(150));
-      expect(await getBalance(exchange.address)).to.equal(parseEther(75));
+      expect(await exchangeV1.getTokenReserve()).to.equal(parseEther(150));
+      expect(await getBalance(exchangeV1.address)).to.equal(parseEther(75));
 
       const userEtherBalanceAfter = await getBalance(owner.address);
       const userTokenBalanceAfter = await token.balanceOf(owner.address);
@@ -167,10 +177,10 @@ describe("Exchange", function () {
       const userEtherBalanceBefore = await getBalance(owner.address);
       const userTokenBalanceBefore = await token.balanceOf(owner.address);
 
-      await exchange.removeLiquidity(parseEther(100));
+      await exchangeV1.removeLiquidity(parseEther(100));
 
-      expect(await exchange.getTokenReserve()).to.equal(parseEther(0));
-      expect(await getBalance(exchange.address)).to.equal(parseEther(0));
+      expect(await exchangeV1.getTokenReserve()).to.equal(parseEther(0));
+      expect(await getBalance(exchangeV1.address)).to.equal(parseEther(0));
 
       const userEtherBalanceAfter = await getBalance(owner.address);
       const userTokenBalanceAfter = await token.balanceOf(owner.address);
@@ -188,14 +198,14 @@ describe("Exchange", function () {
       const userEtherBalanceBefore = await getBalance(owner.address);
       const userTokenBalanceBefore = await token.balanceOf(owner.address);
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .ethToTokenSwap(parseEther(18), { value: parseEther(10) });
 
-      await exchange.removeLiquidity(parseEther(100));
+      await exchangeV1.removeLiquidity(parseEther(100));
 
-      expect(await exchange.getTokenReserve()).to.equal(parseEther(0));
-      expect(await getBalance(exchange.address)).to.equal(parseEther(0));
+      expect(await exchangeV1.getTokenReserve()).to.equal(parseEther(0));
+      expect(await getBalance(exchangeV1.address)).to.equal(parseEther(0));
       expect(formatEther(await token.balanceOf(user.address))).to.equal(
         "18.01637852593266606"
       );
@@ -214,15 +224,15 @@ describe("Exchange", function () {
 
     it("burns LP-tokens", async () => {
       await expect(() =>
-        exchange.removeLiquidity(parseEther(25))
-      ).to.changeTokenBalance(exchange, owner, parseEther(-25));
+        exchangeV1.removeLiquidity(parseEther(25))
+      ).to.changeTokenBalance(exchangeV1, owner, parseEther(-25));
 
-      expect(await exchange.totalSupply()).to.equal(parseEther(75));
+      expect(await exchangeV1.totalSupply()).to.equal(parseEther(75));
     });
 
     it("doesn't allow invalid amount", async () => {
       await expect(
-        exchange.removeLiquidity(parseEther(100.1))
+        exchangeV1.removeLiquidity(parseEther(100.1))
       ).to.be.revertedWith("ERC20: burn amount exceeds balance");
     });
   });
@@ -231,18 +241,18 @@ describe("Exchange", function () {
     it("returns correct token amount", async () => {
       await loadFixture(deployAll);
 
-      await token.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
 
-      let tokensOut = await exchange.getTokenAmount(parseEther(1));
+      let tokensOut = await exchangeV1.getTokenAmount(parseEther(1));
       expect(formatEther(tokensOut)).to.equal("1.978041738678708079");
 
-      tokensOut = await exchange.getTokenAmount(parseEther(100));
+      tokensOut = await exchangeV1.getTokenAmount(parseEther(100));
       expect(formatEther(tokensOut)).to.equal("180.1637852593266606");
 
-      tokensOut = await exchange.getTokenAmount(parseEther(1000));
+      tokensOut = await exchangeV1.getTokenAmount(parseEther(1000));
       expect(formatEther(tokensOut)).to.equal("994.974874371859296482");
     });
   });
@@ -251,18 +261,18 @@ describe("Exchange", function () {
     it("returns correct ether amount", async () => {
       await loadFixture(deployAll);
 
-      await token.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
 
-      let ethOut = await exchange.getEthAmount(parseEther(2));
+      let ethOut = await exchangeV1.getEthAmount(parseEther(2));
       expect(formatEther(ethOut)).to.equal("0.989020869339354039");
 
-      ethOut = await exchange.getEthAmount(parseEther(100));
+      ethOut = await exchangeV1.getEthAmount(parseEther(100));
       expect(formatEther(ethOut)).to.equal("47.16531681753215817");
 
-      ethOut = await exchange.getEthAmount(parseEther(2000));
+      ethOut = await exchangeV1.getEthAmount(parseEther(2000));
       expect(formatEther(ethOut)).to.equal("497.487437185929648241");
     });
   });
@@ -271,8 +281,8 @@ describe("Exchange", function () {
     beforeEach(async () => {
       await loadFixture(deployAll);
 
-      await token.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
     });
@@ -280,7 +290,7 @@ describe("Exchange", function () {
     it("transfers at least min amount of tokens to recipient", async () => {
       const userBalanceBefore = await getBalance(user.address);
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .ethToTokenTransfer(parseEther(1.97), user.address, {
           value: parseEther(1),
@@ -294,11 +304,11 @@ describe("Exchange", function () {
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.equal("1.978041738678708079");
 
-      const exchangeEthBalance = await getBalance(exchange.address);
-      expect(formatEther(exchangeEthBalance)).to.equal("1001.0");
+      const exchangeV1EthBalance = await getBalance(exchangeV1.address);
+      expect(formatEther(exchangeV1EthBalance)).to.equal("1001.0");
 
-      const exchangeTokenBalance = await token.balanceOf(exchange.address);
-      expect(formatEther(exchangeTokenBalance)).to.equal(
+      const exchangeV1TokenBalance = await token.balanceOf(exchangeV1.address);
+      expect(formatEther(exchangeV1TokenBalance)).to.equal(
         "1998.021958261321291921"
       );
     });
@@ -308,8 +318,8 @@ describe("Exchange", function () {
     beforeEach(async () => {
       await loadFixture(deployAll);
 
-      await token.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
     });
@@ -317,7 +327,7 @@ describe("Exchange", function () {
     it("transfers at least min amount of tokens", async () => {
       const userBalanceBefore = await getBalance(user.address);
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .ethToTokenSwap(parseEther(1.97), { value: parseEther(1) });
 
@@ -329,48 +339,48 @@ describe("Exchange", function () {
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.equal("1.978041738678708079");
 
-      const exchangeEthBalance = await getBalance(exchange.address);
-      expect(formatEther(exchangeEthBalance)).to.equal("1001.0");
+      const exchangeV1EthBalance = await getBalance(exchangeV1.address);
+      expect(formatEther(exchangeV1EthBalance)).to.equal("1001.0");
 
-      const exchangeTokenBalance = await token.balanceOf(exchange.address);
-      expect(formatEther(exchangeTokenBalance)).to.equal(
+      const exchangeV1TokenBalance = await token.balanceOf(exchangeV1.address);
+      expect(formatEther(exchangeV1TokenBalance)).to.equal(
         "1998.021958261321291921"
       );
     });
 
-    it("affects exchange rate", async () => {
-      let tokensOut = await exchange.getTokenAmount(parseEther(10));
+    it("affects exchangeV1 rate", async () => {
+      let tokensOut = await exchangeV1.getTokenAmount(parseEther(10));
       expect(formatEther(tokensOut)).to.equal("19.605901574413308248");
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .ethToTokenSwap(parseEther(9), { value: parseEther(10) });
 
-      tokensOut = await exchange.getTokenAmount(parseEther(10));
+      tokensOut = await exchangeV1.getTokenAmount(parseEther(10));
       expect(formatEther(tokensOut)).to.equal("19.223356774598792281");
     });
 
     it("fails when output amount is less than min amount", async () => {
       await expect(
-        exchange
+        exchangeV1
           .connect(user)
           .ethToTokenSwap(parseEther(2), { value: parseEther(1) })
       ).to.be.revertedWith("insufficient output amount");
     });
 
     it("allows zero swaps", async () => {
-      await exchange
+      await exchangeV1
         .connect(user)
         .ethToTokenSwap(parseEther(0), { value: parseEther(0) });
 
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.equal("0.0");
 
-      const exchangeEthBalance = await getBalance(exchange.address);
-      expect(formatEther(exchangeEthBalance)).to.equal("1000.0");
+      const exchangeV1EthBalance = await getBalance(exchangeV1.address);
+      expect(formatEther(exchangeV1EthBalance)).to.equal("1000.0");
 
-      const exchangeTokenBalance = await token.balanceOf(exchange.address);
-      expect(formatEther(exchangeTokenBalance)).to.equal("2000.0");
+      const exchangeV1TokenBalance = await token.balanceOf(exchangeV1.address);
+      expect(formatEther(exchangeV1TokenBalance)).to.equal("2000.0");
     });
   });
 
@@ -379,19 +389,19 @@ describe("Exchange", function () {
       await loadFixture(deployAll);
 
       await token.transfer(user.address, parseEther(22));
-      await token.connect(user).approve(exchange.address, parseEther(22));
+      await token.connect(user).approve(exchangeV1.address, parseEther(22));
 
-      await token.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
     });
 
     it("transfers at least min amount of tokens", async () => {
       const userBalanceBefore = await getBalance(user.address);
-      const exchangeBalanceBefore = await getBalance(exchange.address);
+      const exchangeV1BalanceBefore = await getBalance(exchangeV1.address);
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .tokenToEthSwap(parseEther(2), parseEther(0.9));
 
@@ -403,36 +413,38 @@ describe("Exchange", function () {
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.equal("20.0");
 
-      const exchangeBalanceAfter = await getBalance(exchange.address);
+      const exchangeV1BalanceAfter = await getBalance(exchangeV1.address);
       expect(
-        formatEther(exchangeBalanceAfter.sub(exchangeBalanceBefore))
+        formatEther(exchangeV1BalanceAfter.sub(exchangeV1BalanceBefore))
       ).to.equal("-0.989020869339354039");
 
-      const exchangeTokenBalance = await token.balanceOf(exchange.address);
-      expect(formatEther(exchangeTokenBalance)).to.equal("2002.0");
+      const exchangeV1TokenBalance = await token.balanceOf(exchangeV1.address);
+      expect(formatEther(exchangeV1TokenBalance)).to.equal("2002.0");
     });
 
-    it("affects exchange rate", async () => {
-      let ethOut = await exchange.getEthAmount(parseEther(20));
+    it("affects exchangeV1 rate", async () => {
+      let ethOut = await exchangeV1.getEthAmount(parseEther(20));
       expect(formatEther(ethOut)).to.equal("9.802950787206654124");
 
-      await exchange
+      await exchangeV1
         .connect(user)
         .tokenToEthSwap(parseEther(20), parseEther(9));
 
-      ethOut = await exchange.getEthAmount(parseEther(20));
+      ethOut = await exchangeV1.getEthAmount(parseEther(20));
       expect(formatEther(ethOut)).to.equal("9.61167838729939614");
     });
 
     it("fails when output amount is less than min amount", async () => {
       await expect(
-        exchange.connect(user).tokenToEthSwap(parseEther(2), parseEther(1.0))
+        exchangeV1.connect(user).tokenToEthSwap(parseEther(2), parseEther(1.0))
       ).to.be.revertedWith("insufficient output amount");
     });
 
     it("allows zero swaps", async () => {
       const userBalanceBefore = await getBalance(user.address);
-      await exchange.connect(user).tokenToEthSwap(parseEther(0), parseEther(0));
+      await exchangeV1
+        .connect(user)
+        .tokenToEthSwap(parseEther(0), parseEther(0));
 
       const userBalanceAfter = await getBalance(user.address);
       expect(formatEther(userBalanceAfter.sub(userBalanceBefore))).to.equal(
@@ -442,11 +454,11 @@ describe("Exchange", function () {
       const userTokenBalance = await token.balanceOf(user.address);
       expect(formatEther(userTokenBalance)).to.equal("22.0");
 
-      const exchangeEthBalance = await getBalance(exchange.address);
-      expect(formatEther(exchangeEthBalance)).to.equal("1000.0");
+      const exchangeV1EthBalance = await getBalance(exchangeV1.address);
+      expect(formatEther(exchangeV1EthBalance)).to.equal("1000.0");
 
-      const exchangeTokenBalance = await token.balanceOf(exchange.address);
-      expect(formatEther(exchangeTokenBalance)).to.equal("2000.0");
+      const exchangeV1TokenBalance = await token.balanceOf(exchangeV1.address);
+      expect(formatEther(exchangeV1TokenBalance)).to.equal("2000.0");
     });
   });
 
@@ -467,23 +479,23 @@ describe("Exchange", function () {
       await token1.deployed();
       await token2.deployed();
 
-      const exchange = await createExchange(factory, token1.address, owner);
-      const exchange2 = await createExchange(factory, token2.address, user);
+      const exchangeV1 = await createExchangeV1(factory, token1.address, owner);
+      const exchangeV12 = await createExchangeV1(factory, token2.address, user);
 
-      await token1.approve(exchange.address, parseEther(2000));
-      await exchange.addLiquidity(parseEther(2000), {
+      await token1.approve(exchangeV1.address, parseEther(2000));
+      await exchangeV1.addLiquidity(parseEther(2000), {
         value: parseEther(1000),
       });
 
-      await token2.connect(user).approve(exchange2.address, parseEther(1000));
-      await exchange2
+      await token2.connect(user).approve(exchangeV12.address, parseEther(1000));
+      await exchangeV12
         .connect(user)
         .addLiquidity(parseEther(1000), { value: parseEther(1000) });
 
       expect(await token2.balanceOf(owner.address)).to.equal(0);
 
-      await token1.approve(exchange.address, parseEther(10));
-      await exchange.tokenToTokenSwap(
+      await token1.approve(exchangeV1.address, parseEther(10));
+      await exchangeV1.tokenToTokenSwap(
         parseEther(10),
         parseEther(4.8),
         token2.address
@@ -495,8 +507,8 @@ describe("Exchange", function () {
 
       expect(await token1.balanceOf(user.address)).to.equal(0);
 
-      await token2.connect(user).approve(exchange2.address, parseEther(10));
-      await exchange2
+      await token2.connect(user).approve(exchangeV12.address, parseEther(10));
+      await exchangeV12
         .connect(user)
         .tokenToTokenSwap(parseEther(10), parseEther(19.6), token1.address);
 

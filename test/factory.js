@@ -12,7 +12,7 @@ const formatEther = (value) =>
   );
 const getBalance = (value) => ethers.provider.getBalance(value.toString());
 
-describe("Factory", function () {
+describe("FactoryV1", function () {
   let owner;
   let factory;
   let token;
@@ -30,7 +30,7 @@ describe("Factory", function () {
       value: 0,
     });
 
-    const Factory = await ethers.getContractFactory("Factory");
+    const Factory = await ethers.getContractFactory("FactoryV1");
     factory = await Factory.deploy({ value: 0 });
 
     return {
@@ -48,24 +48,24 @@ describe("Factory", function () {
     });
   });
 
-  describe("createExchange", () => {
-    it("deploys an exchange", async () => {
+  describe("createExchangeV1", () => {
+    it("deploys an exchangeV1", async () => {
       await loadFixture(deployAll);
 
-      const exchangeAddress = await factory.callStatic.createExchange(
+      const exchangeV1Address = await factory.callStatic.createExchange(
         token.address
       );
       await factory.createExchange(token.address);
 
-      expect(await factory.tokenToExchange(token.address)).to.equal(
-        exchangeAddress
+      expect(await factory.tokenToExchangeV1(token.address)).to.equal(
+        exchangeV1Address
       );
 
-      const Exchange = await ethers.getContractFactory("Exchange");
-      const exchange = await Exchange.attach(exchangeAddress);
-      expect(await exchange.name()).to.equal("Dex-LP-V1");
-      expect(await exchange.symbol()).to.equal("DLP-V1");
-      expect(await exchange.factoryAddress()).to.equal(factory.address);
+      const ExchangeV1 = await ethers.getContractFactory("ExchangeV1");
+      const exchangeV1 = await ExchangeV1.attach(exchangeV1Address);
+      expect(await exchangeV1.name()).to.equal("Dex-LP-V1");
+      expect(await exchangeV1.symbol()).to.equal("DLP-V1");
+      expect(await exchangeV1.factoryAddress()).to.equal(factory.address);
     });
 
     it("doesn't allow zero address", async () => {
@@ -76,28 +76,28 @@ describe("Factory", function () {
       ).to.be.revertedWith("invalid token address");
     });
 
-    it("fails when exchange exists", async () => {
+    it("fails when exchangeV1 exists", async () => {
       await loadFixture(deployAll);
 
       await factory.createExchange(token.address);
 
       await expect(factory.createExchange(token.address)).to.be.revertedWith(
-        "exchange already exists"
+        "exchangeV1 already exists"
       );
     });
   });
 
-  describe("getExchange", () => {
-    it("returns exchange address by token address", async () => {
+  describe("getExchangeV1", () => {
+    it("returns exchangeV1 address by token address", async () => {
       await loadFixture(deployAll);
 
-      const exchangeAddress = await factory.callStatic.createExchange(
+      const exchangeV1Address = await factory.callStatic.createExchange(
         token.address
       );
       await factory.createExchange(token.address);
 
       expect(await factory.getExchange(token.address)).to.equal(
-        exchangeAddress
+        exchangeV1Address
       );
     });
   });
